@@ -1,7 +1,8 @@
 import express from 'express';
 import { pool } from '../db.js';
-import { generateToken, sanitizeUser, hashPassword, verifyPassword, verifyToken, revokeToken } from '../auth.js';
+import { generateToken, sanitizeUser, hashPassword, verifyPassword, verifyToken, revokeToken, generateOtpSecret, verifyOtpCode, generate2FAPendingToken, generateOtpUrl, JWT_SECRET } from '../auth.js';
 import { transformRow, getTableColumns, transformToDb } from '../utils/entityName.js';
+import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
@@ -81,6 +82,16 @@ router.post('/apps/:appId/auth/login', async (req, res) => {
     // Check if user is active
     if (user.is_active === false) {
       return res.status(403).json({ error: 'Account suspended' });
+    }
+    
+    // Check if 2FA is enabled
+    if (user.two_factor_enabled && user.otp_secret) {
+      const tempToken = generate2FAPendingToken(user.id);
+      return res.json({
+        requiresOtp: true,
+        tempToken: tempToken,
+        message: 'Two-factor authentication required'
+      });
     }
     
     const token = generateToken(user.id);
@@ -170,7 +181,109 @@ router.post('/apps/:appId/auth/change-password', async (req, res) => {
 
 // POST /api/apps/:appId/auth/verify-otp
 router.post('/apps/:appId/auth/verify-otp', async (req, res) => {
-  res.json({ success: true });
+  try {
+    const { tempToken, code } = req.body;
+    if (!tempToken || !code) {
+      return res.status(400).json({ error: 'Temp token and OTP code required' });
+    }
+    
+    // Verify temp token
+    const decoded = jwt.verify(tempToken, JWT_SECRET);
+    if (!decoded.twoFactorPending) {
+      return res.status(401).json({ error: 'Invalid temp token' });
+    }
+    
+    // Get user
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [decoded.userId]);
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'User not found' });
+    }
+    
+    const user = result.rows[0];
+    if (!user.two_factor_enabled || !user.otp_secret) {
+      return res.status(400).json({ error: '2FA not enabled for this account' });
+    }
+    
+    // Verify OTP code
+    if (!verifyOtpCode(code, user.otp_secret)) {
+      return res.status(401).json({ error: 'Invalid OTP code' });
+    }
+    
+    // Generate JWT
+    const token = generateToken(user.id);
+    res.json({
+      access_token: token,
+      user: sanitizeUser(transformRow(user)),
+    });
+  } catch (err) {
+    console.error('OTP verify error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/apps/:appId/auth/enable-2fa
+router.post('/apps/:appId/auth/enable-2fa', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const user = await verifyToken(token);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    const secret = generateOtpSecret();
+    await pool.query('UPDATE users SET otp_secret = $1 WHERE id = $2', [secret, user.id]);
+    
+    const otpUrl = generateOtpUrl(secret, user.email);
+    res.json({
+      secret: secret,
+      otpUrl: otpUrl,
+      qrCodeUrl: `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpUrl)}`
+    });
+  } catch (err) {
+    console.error('Enable 2FA error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/apps/:appId/auth/confirm-2fa
+router.post('/apps/:appId/auth/confirm-2fa', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    const user = await verifyToken(token);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    if (!user.otp_secret) {
+      return res.status(400).json({ error: 'No OTP secret set. Call enable-2fa first.' });
+    }
+    
+    const { code } = req.body;
+    if (!code) {
+      return res.status(400).json({ error: 'OTP code required' });
+    }
+    
+    if (!verifyOtpCode(code, user.otp_secret)) {
+      return res.status(401).json({ error: 'Invalid OTP code' });
+    }
+    
+    // Enable 2FA
+    await pool.query('UPDATE users SET two_factor_enabled = true WHERE id = $1', [user.id]);
+    res.json({ success: true, message: '2FA enabled successfully' });
+  } catch (err) {
+    console.error('Confirm 2FA error:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 // POST /api/apps/:appId/auth/resend-otp

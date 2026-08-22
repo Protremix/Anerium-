@@ -1,3 +1,5 @@
+import { createRequire as createRequireOtp } from "module";
+const otpRequire = createRequireOtp(import.meta.url);
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { pool } from './db.js';
@@ -79,3 +81,33 @@ export function verifyPassword(password, hash) {
 }
 
 export { JWT_SECRET };
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const { authenticator } = require("otplib");
+// ============ TOTP / 2FA FUNCTIONS ============
+const { generateSecret, generateSync, verifySync, generateURI } = otpRequire("otplib");
+
+// Generate a new TOTP secret for a user
+export function generateOtpSecret() {
+  return generateSecret();
+}
+
+// Verify a TOTP code against a secret
+export function verifyOtpCode(token, secret) {
+  try {
+    const result = verifySync({ token, secret }); return !!(result && result.valid);
+  } catch {
+    return false;
+  }
+}
+
+// Generate a temporary 2FA pending token (5 min expiry)
+export function generate2FAPendingToken(userId) {
+  return jwt.sign({ userId, twoFactorPending: true }, JWT_SECRET, { expiresIn: '5m' });
+}
+
+// Generate OTP auth URL for QR code (Google Authenticator compatible)
+export function generateOtpUrl(secret, email) {
+  return generateURI({ secret, account: email, issuer: 'ANERIUM OnePass' });
+}
