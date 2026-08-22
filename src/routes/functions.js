@@ -276,11 +276,11 @@ router.post('/apps/:appId/functions/:functionName', async (req, res) => {
             return res.json({ tiers });
           }
           case 'getRewards': {
-            const rewards = await base44.entities.Discount.filter({ business_id: body.business_id, status: 'active' }, '-created_date', 50);
+            const rewards = await base44.entities.Discount.filter({ business_id: body.business_id, is_active: true }, '-created_date', 50);
             return res.json({ rewards });
           }
           case 'getPersonalizedOffers': {
-            const offers = await base44.entities.Discount.filter({ status: 'active', is_public: true }, '-created_date', 10);
+            const offers = await base44.entities.Discount.filter({ is_active: true }, '-created_date', 10);
             return res.json({ offers });
           }
           case 'getReferralCenter': {
@@ -670,7 +670,7 @@ router.post('/apps/:appId/functions/:functionName', async (req, res) => {
       
       // ============ discountApi ============
       case 'discountApi': {
-        const discounts = await base44.entities.Discount.filter({ status: 'active', is_public: true }, '-created_date', 50);
+        const discounts = await base44.entities.Discount.filter({ is_active: true }, '-created_date', 50);
         return res.json({ discounts });
       }
       

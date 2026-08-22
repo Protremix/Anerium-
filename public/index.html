@@ -83,7 +83,7 @@ if (window.self === window.top) {
     if (path === lastPath) return;
     lastPath = path;
     const pageName = getPageNameFromPath(path) || "home";
-    const appId = "test";
+    const appId = "6a7d630d865dd7ed11a16a3c";
     if (!appId) return;
     fetch(`/api/app-logs/${appId}/log-user-in-app/${pageName}`, {
       method: "POST",
