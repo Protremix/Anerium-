@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /admin
+Disallow: /admin/
+Disallow: /business-portal
+Disallow: /business-onboarding
+Allow: /
+
+# Admin areas are private and must not be indexed or crawled.
+# The admin portal is accessible only to authenticated administrators.
+
+Sitemap: https://anerium.com/sitemap.xml

@@ -1,0 +1,43 @@
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: anerium
+      POSTGRES_USER: anerium
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-4142805924c0dce85fff8d0041dfd8ad2dff7f8d656691bc}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U anerium"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: anerium
+      DB_USER: anerium
+      DB_PASSWORD: ${DB_PASSWORD:-4142805924c0dce85fff8d0041dfd8ad2dff7f8d656691bc}
+      JWT_SECRET: ${JWT_SECRET:-646165297bdf6de75e6d3454132e730f57c056605e1a577b52ba21764b3d7804}
+      PORT: 3001
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      OPENAI_PROJECT_KEY: ${OPENAI_PROJECT_KEY}
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - ./public:/app/public
+
+volumes:
+  postgres_data:

@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com wss:; media-src 'self' https: blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="permissions-policy" content="camera=(self), geolocation=(self), microphone=(), payment=(self)" />
+    <link rel="manifest" href="/manifest.json" />
+    <title>Anerium One Pass — Loyalty Cards, Points & Booking | Global Perks</title>
+    <meta name="description" content="Anerium One Pass — global loyalty cards, points and booking across every industry and country. Earn loyalty points, book services and appointments, and unlock exclusive 5–20% discounts at restaurants, hotels, salons, gyms, shops and thousands of businesses — worldwide, in any language." />
+    <meta name="keywords" content="Anerium, Anerium One Pass, One Pass, loyalty cards, loyalty card, loyalty points, points, reward points, rewards points, booking, online booking, business booking, table booking, appointment booking, reservation, loyalty program, loyalty app, loyalty rewards, rewards program, reward card, digital loyalty card, loyalty wallet, points wallet, discount pass, discounts, exclusive discounts, QR code, QR loyalty, digital pass, premium membership, member perks, global savings, business directory, business loyalty, save money, cashback, member discounts, loyalty membership, premium loyalty, global loyalty, loyalty pass, discount card, savings pass, Anerium booking, Anerium loyalty, Anerium points, One Pass booking, One Pass loyalty, One Pass points, rewards wallet, loyalty rewards app, points rewards, restaurant loyalty, cafe loyalty, coffee shop discounts, retail discounts, fashion discounts, clothing store, boutique, electronics store, grocery discounts, supermarket loyalty, bakery, bar, pub, nightlife, hotel loyalty, resort booking, vacation rental, bed and breakfast, beauty salon, hair salon, barber shop, nail salon, spa, wellness, massage, beauty therapy, tattoo, fitness, gym, yoga studio, personal trainer, pilates, entertainment, cinema, theater, museum, amusement park, real estate, property, construction, contractor, renovation, legal, law firm, lawyer, notary, medical, doctor, clinic, dental, dentist, pharmacy, health, therapy, chiropractor, veterinary, pet services, automotive, car repair, car wash, auto dealership, tire service, travel agency, tour operator, flight booking, wedding, event planning, catering, photography, florist, jewelry, watches, home decor, furniture, cleaning service, repair service, plumbing, electrician, locksmith, landscaping, gardening, childcare, school, tutoring, education, training, finance, banking, insurance, accounting, technology, software, consulting, marketing, advertising, sports, outdoor, books, music, arts, crafts, Germany loyalty, Spain loyalty, France loyalty, Italy loyalty, United Kingdom loyalty, Netherlands, Belgium, Austria, Switzerland, Portugal, Greece, Poland, Sweden, Norway, Denmark, Finland, Ireland, Czech Republic, Hungary, Romania, Bulgaria, Croatia, Slovakia, Europe loyalty, USA loyalty, United States loyalty, Canada loyalty, Mexico, Brazil, Argentina, Chile, Colombia, Peru, Latin America, Australia loyalty, New Zealand, Japan loyalty, China loyalty, India loyalty, Singapore, South Korea, Thailand, Vietnam, Malaysia, Indonesia, Philippines, UAE loyalty, Dubai, Saudi Arabia, Qatar, Israel, Turkey, Egypt, South Africa, Nigeria, Kenya, Morocco, worldwide loyalty, global loyalty program, multilingual loyalty, loyalty English, loyalty Spanish, loyalty German, loyalty French, loyalty Italian, loyalty Portuguese, loyalty Arabic, loyalty Russian, loyalty Chinese, loyalty Japanese, loyalty Hindi, loyalty Dutch, loyalty Polish, loyalty Turkish" />
+    <meta name="author" content="Anerium One Pass" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="theme-color" content="#4f46e5" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Anerium One Pass" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="mask-icon" href="/icon.svg" color="#4f46e5" />
+    <meta name="language" content="English, Spanish, German, French, Italian, Portuguese, Arabic, Russian, Chinese, Japanese, Hindi, Dutch, Polish, Turkish" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="distribution" content="global" />
+    <meta name="coverage" content="Worldwide" />
+    <meta name="target" content="all" />
+    <meta name="audience" content="all" />
+    <link rel="canonical" href="https://anerium.com/" />
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Anerium One Pass — Global Loyalty, Simplified" />
+    <meta property="og:description" content="Anerium One Pass, endless perks. Premium membership with exclusive discounts at thousands of businesses worldwide." />
+    <meta property="og:url" content="https://anerium.com/" />
+    <meta property="og:site_name" content="Anerium One Pass" />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta property="og:image:alt" content="Anerium One Pass — Global Loyalty Platform" />
+    <meta property="og:locale" content="en_US" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Anerium One Pass — Global Loyalty, Simplified" />
+    <meta name="twitter:description" content="Anerium One Pass, endless perks. Premium membership with exclusive discounts at thousands of businesses worldwide." />
+    <meta name="twitter:image" content="/icon-512.png" />
+    <meta name="twitter:image:alt" content="Anerium One Pass — Global Loyalty Platform" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <style>
+      .custom-marker { background: transparent; border: none; }
+      /* Anti-scraping: content is viewable but not selectable/copyable (except form fields) */
+      body { -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+      input, textarea, [contenteditable], [contenteditable="true"] { -webkit-user-select: text; -moz-user-select: text; user-select: text; }
+    </style>
+    <!-- Google Analytics (GA4) — replace G-XXXXXXXXXX below with your Measurement ID -->
+    <script>
+      (function () {
+        var id = 'G-Z6B35ZY8K9';
+        window.GA_MEASUREMENT_ID = id;
+        if (!id || id === 'G-XXXXXXXXXX') return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', id, { send_page_view: false });
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-DA1EcbA_.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CrcPQWdI.css">
+    <script type="module">
+if (window.self === window.top) {
+  let lastPath = "";
+  function getPageNameFromPath(path) {
+    const segments = path.split("/").filter(Boolean);
+    return segments[0] || null;
+  }
+  function trackPageView() {
+    const path = window.location.pathname;
+    if (path === lastPath) return;
+    lastPath = path;
+    const pageName = getPageNameFromPath(path) || "home";
+    const appId = "test";
+    if (!appId) return;
+    fetch(`/api/app-logs/${appId}/log-user-in-app/${pageName}`, {
+      method: "POST",
+    }).catch(() => {});
+  }
+  const originalPushState = history.pushState.bind(history);
+  history.pushState = function (...args) {
+    originalPushState(...args);
+    trackPageView();
+  };
+  const originalReplaceState = history.replaceState.bind(history);
+  history.replaceState = function (...args) {
+    originalReplaceState(...args);
+    trackPageView();
+  };
+  window.addEventListener("popstate", trackPageView);
+  trackPageView();
+}
+</script>
+  
+<style>
+#fixed-app-btn {
+  position: fixed;
+  top: 14px;
+  right: 180px;
+  z-index: 9999;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: #4f46e5;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 12px rgba(79,70,229,0.4);
+}
+#fixed-app-btn:hover { background: #4338ca; transform: translateY(-1px); }
+@media (max-width: 768px) {
+  #fixed-app-btn { right: 12px; top: auto; bottom: 20px; z-index: 99999; }
+}
+</style>
+<a id="fixed-app-btn" href="/download">📱 Get the App</a>
+<script>
+// Also add "Download App" to the footer periodically
+(function() {
+  function addFooterLink() {
+    if (document.getElementById('footer-app-link')) return;
+    var footer = document.querySelector('footer');
+    if (!footer) return;
+    // Find "Company" heading in footer
+    var els = footer.querySelectorAll('*');
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].textContent.trim() === 'Company' && els[i].children.length === 0) {
+        var section = els[i].closest('div') || els[i].parentElement;
+        if (section && !section.querySelector('#footer-app-link')) {
+          var link = document.createElement('a');
+          link.id = 'footer-app-link';
+          link.href = '/download';
+          link.textContent = 'Download App';
+          link.style.cssText = 'display:block;padding:4px 0;color:inherit;text-decoration:none;font-size:14px;opacity:0.8;';
+          section.appendChild(link);
+        }
+        return;
+      }
+    }
+  }
+  setInterval(addFooterLink, 2000);
+  var obs = new MutationObserver(addFooterLink);
+  obs.observe(document.body, { childList: true, subtree: true });
+})();
+</script>
+</head>
+  <body><script>
+// Force unregister old service workers to clear stale cache
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(reg) { reg.unregister(); });
+  });
+  caches.keys().then(function(keys) {
+    keys.forEach(function(k) { caches.delete(k); });
+  });
+}
+</script>
+    <div id="root"></div>
+    <script>
+      // Anti-scraping protection: site content is viewable only, not collectible.
+      (function () {
+        function isField(el) {
+          return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+        }
+        document.addEventListener('contextmenu', function (e) { if (!isField(e.target)) e.preventDefault(); });
+        document.addEventListener('selectstart', function (e) { if (!isField(e.target)) e.preventDefault(); });
+        document.addEventListener('dragstart', function (e) {
+          var t = e.target && e.target.tagName;
+          if (t === 'IMG' || t === 'A') e.preventDefault();
+        });
+        document.addEventListener('copy', function (e) { e.clipboardData && e.clipboardData.setData('text/plain', ''); e.preventDefault(); });
+        document.addEventListener('cut', function (e) { e.clipboardData && e.clipboardData.setData('text/plain', ''); e.preventDefault(); });
+        document.addEventListener('beforecopy', function (e) { e.preventDefault(); });
+        document.addEventListener('keydown', function (e) {
+          var k = (e.key || '').toLowerCase();
+          if ((e.ctrlKey || e.metaKey) && (k === 'c' || k === 'x' || k === 's' || k === 'u') && !isField(e.target)) e.preventDefault();
+          if ((e.ctrlKey || e.metaKey) && e.shiftKey && k === 'i') e.preventDefault();
+          if (e.key === 'F12') e.preventDefault();
+        });
+      })();
+    </script>
+
+<style>
+#anerium-get-app {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 2147483647 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #4f46e5 !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  padding: 14px 24px !important;
+  border-radius: 50px !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 8px 32px rgba(79,70,229,0.5) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s, background 0.2s !important;
+}
+#anerium-get-app:hover {
+  background: #4338ca !important;
+  transform: translateY(-2px) !important;
+}
+</style>
+<a id="anerium-get-app" href="/download">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+  Get the App
+</a>
+

@@ -1,0 +1,19 @@
+{
+  "name": "anerium-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "node --watch src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "pg": "^8.13.0",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^10.0.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^7.1.0"
+  }
+}

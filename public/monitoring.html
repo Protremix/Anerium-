@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANERIUM Monitor</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e1e4e8; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; background: #161b22; border-bottom: 1px solid #30363d; }
+.header h1 { font-size: 22px; font-weight: 600; }
+.header .status-badge { padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+.status-healthy { background: #1a4731; color: #3fb950; border: 1px solid #2ea043; }
+.status-warning { background: #3d2e00; color: #d29922; border: 1px solid #b08800; }
+.status-critical { background: #4a1212; color: #f85149; border: 1px solid #da3633; }
+.container { padding: 20px 30px; max-width: 1400px; margin: 0 auto; }
+.grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.card { background: #161b22; border: 1px solid #30363d; border-radius: 10px; padding: 20px; }
+.card-label { font-size: 12px; color: #7d8590; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.card-value { font-size: 28px; font-weight: 700; }
+.card-sub { font-size: 13px; color: #7d8590; margin-top: 4px; }
+.section { background: #161b22; border: 1px solid #30363d; border-radius: 10px; margin-bottom: 24px; overflow: hidden; }
+.section-header { padding: 14px 20px; border-bottom: 1px solid #30363d; font-weight: 600; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: 10px 20px; font-size: 12px; color: #7d8590; text-transform: uppercase; border-bottom: 1px solid #30363d; }
+td { padding: 10px 20px; font-size: 14px; border-bottom: 1px solid #21262d; }
+tr:hover { background: #1c2128; }
+.tag { padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.tag-healthy { background: #1a4731; color: #3fb950; }
+.tag-warning { background: #3d2e00; color: #d29922; }
+.tag-critical { background: #4a1212; color: #f85149; }
+.alert-item { padding: 12px 20px; border-bottom: 1px solid #21262d; display: flex; align-items: start; gap: 12px; }
+.alert-icon { font-size: 18px; }
+.alert-content { flex: 1; }
+.alert-type { font-size: 12px; font-weight: 600; color: #7d8590; }
+.alert-message { font-size: 14px; margin-top: 2px; }
+.alert-time { font-size: 12px; color: #7d8590; }
+.progress-bar { height: 6px; background: #21262d; border-radius: 3px; margin-top: 6px; overflow: hidden; }
+.progress-fill { height: 100%; border-radius: 3px; }
+.refresh-btn { background: #21262d; border: 1px solid #30363d; color: #e1e4e8; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.refresh-btn:hover { background: #30363d; }
+.auto-refresh { font-size: 12px; color: #7d8590; }
+.auto-refresh input { margin-right: 4px; }
+.no-data { padding: 40px; text-align: center; color: #7d8590; }
+</style>
+</head>
+<body>
+<div class="header">
+<h1>🔴 ANERIUM Monitor</h1>
+<div style="display:flex; align-items:center; gap:16px;">
+<label class="auto-refresh"><input type="checkbox" id="autoRefresh" checked> Auto-refresh (5s)</label>
+<button class="refresh-btn" onclick="loadData()">Refresh Now</button>
+<span class="status-badge" id="overallStatus">Loading...</span>
+</div>
+</div>
+<div class="container">
+<div class="grid" id="statsGrid"></div>
+<div class="section" id="alertsSection">
+<div class="section-header">Active Alerts <span id="alertCount" style="font-weight:400; color:#7d8590"></span></div>
+<div id="alertsList"><div class="no-data">No alerts — all systems normal</div></div>
+</div>
+<div class="section">
+<div class="section-header">Endpoint Performance</div>
+<table>
+<thead><tr><th>Endpoint</th><th>Requests</th><th>Avg (ms)</th><th>Last (ms)</th><th>Errors</th><th>Error Rate</th><th>Status</th></tr></thead>
+<tbody id="endpointsTable"><tr><td colspan="7" class="no-data">Loading...</td></tr></tbody>
+</table>
+</div>
+<div class="section">
+<div class="section-header">Database Performance</div>
+<div style="padding:20px;" id="dbStats">Loading...</div>
+</div>
+</div>
+<script>
+let refreshTimer = null;
+async function loadData() {
+try {
+const res = await fetch('/api/monitoring/health');
+const data = await res.json();
+const statusEl = document.getElementById('overallStatus');
+const statusMap = { healthy: 'status-healthy', warning: 'status-warning', critical: 'status-critical' };
+const labelMap = { healthy: '✅ All Systems Operational', warning: '⚠️ Warnings Detected', critical: '🔴 Critical Issues' };
+statusEl.className = 'status-badge ' + (statusMap[data.overallStatus] || '');
+statusEl.textContent = labelMap[data.overallStatus] || data.overallStatus;
+
+// Stats cards
+const dbAvg = data.database.avgQueryMs || 0;
+const dbSlowest = data.database.slowestQueryMs || 0;
+const eps = data.endpoints.reduce((s, e) => s + e.requests, 0);
+const totalErrors = data.endpoints.reduce((s, e) => s + e.errors, 0);
+const errRate = eps > 0 ? ((totalErrors / eps) * 100).toFixed(1) : 0;
+const slowCount = (data.endpoints.filter(e => e.avgMs > 500)).length;
+
+document.getElementById('statsGrid').innerHTML = `
+<div class="card"><div class="card-label">Uptime</div><div class="card-value">${data.uptime}</div><div class="card-sub">Since last restart</div></div>
+<div class="card"><div class="card-label">Total Requests</div><div class="card-value">${eps}</div><div class="card-sub">${data.endpoints.length} endpoints tracked</div></div>
+<div class="card"><div class="card-label">Error Rate</div><div class="card-value" style="color:${errRate > 1 ? '#f85149' : '#3fb950'}">${errRate}%</div><div class="card-sub">${totalErrors} errors / ${eps} requests</div></div>
+<div class="card"><div class="card-label">Slow Endpoints</div><div class="card-value" style="color:${slowCount > 0 ? '#d29922' : '#3fb950'}">${slowCount}</div><div class="card-sub">Threshold: ${data.thresholds.ENDPOINT_MS}ms</div></div>
+<div class="card"><div class="card-label">DB Queries</div><div class="card-value">${data.database.totalQueries}</div><div class="card-sub">Avg: ${dbAvg}ms</div></div>
+<div class="card"><div class="card-label">Slow Queries</div><div class="card-value" style="color:${data.database.slowQueries > 0 ? '#d29922' : '#3fb950'}">${data.database.slowQueries || 0}</div><div class="card-sub">Threshold: ${data.thresholds.DB_QUERY_MS}ms</div></div>
+<div class="card"><div class="card-label">DB Connections</div><div class="card-value">${data.database.activeConnections}</div><div class="card-sub">Active PostgreSQL sessions</div></div>
+<div class="card"><div class="card-label">Memory</div><div class="card-value">${data.system.memoryMb}MB</div><div class="card-sub">Heap: ${data.system.memoryTotalMb}MB total</div></div>
+`;
+
+// Alerts
+const alertsList = document.getElementById('alertsList');
+const alertCount = document.getElementById('alertCount');
+if (data.alerts && data.alerts.length > 0) {
+alertCount.textContent = `${data.alerts.length} active`;
+alertsList.innerHTML = data.alerts.map(a => `
+<div class="alert-item">
+<span class="alert-icon">${a.severity === 'critical' ? '🔴' : '⚠️'}</span>
+<div class="alert-content">
+<div class="alert-type">${a.type}</div>
+<div class="alert-message">${a.message}</div>
+<div class="alert-time">${new Date(a.timestamp).toLocaleString()}</div>
+</div>
+</div>`).join('');
+} else {
+alertCount.textContent = '0 active';
+alertsList.innerHTML = '<div class="no-data">No alerts — all systems normal ✅</div>';
+}
+
+// Endpoints table
+const et = document.getElementById('endpointsTable');
+if (data.endpoints.length === 0) {
+et.innerHTML = '<tr><td colspan="7" class="no-data">No endpoint data yet — send some traffic</td></tr>';
+} else {
+et.innerHTML = data.endpoints.map(e => {
+const sClass = e.status === 'healthy' ? 'tag-healthy' : e.status === 'warning' ? 'tag-warning' : 'tag-critical';
+const errColor = e.errorRate > 1 ? '#f85149' : '#7d8590';
+const msColor = e.avgMs > 500 ? '#f85149' : e.avgMs > 200 ? '#d29922' : '#3fb950';
+return `<tr>
+<td style="font-family:monospace;font-size:13px">${e.endpoint}</td>
+<td>${e.requests}</td>
+<td style="color:${msColor};font-weight:600">${e.avgMs}</td>
+<td>${e.lastMs}</td>
+<td style="color:${e.errors > 0 ? '#f85149' : '#7d8590'}">${e.errors}</td>
+<td style="color:${errColor}">${e.errorRate}%</td>
+<td><span class="tag ${sClass}">${e.status.toUpperCase()}</span></td>
+</tr>`;
+}).join('');
+}
+
+// DB stats
+document.getElementById('dbStats').innerHTML = `
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+<div><div class="card-label">Total Queries</div><div style="font-size:22px;font-weight:700">${data.database.totalQueries}</div></div>
+<div><div class="card-label">Avg Query Time</div><div style="font-size:22px;font-weight:700;color:${dbAvg > 100 ? '#f85149' : '#3fb950'}">${dbAvg}ms</div></div>
+<div><div class="card-label">Slow Queries</div><div style="font-size:22px;font-weight:700;color:${data.database.slowQueries > 0 ? '#d29922' : '#3fb950'}">${data.database.slowQueries || 0}</div></div>
+<div><div class="card-label">Slowest Query</div><div style="font-size:22px;font-weight:700;color:${dbSlowest > 100 ? '#f85149' : '#3fb950'}">${dbSlowest}ms</div></div>
+<div><div class="card-label">Active Connections</div><div style="font-size:22px;font-weight:700">${data.database.activeConnections}</div></div>
+<div><div class="card-label">Memory (Heap)</div><div style="font-size:22px;font-weight:700">${data.system.memoryMb}MB</div></div>
+</div>
+${data.database.slowestQuery ? `<div style="margin-top:16px;padding:12px;background:#0d1117;border-radius:6px;font-family:monospace;font-size:12px;color:#7d8590">Slowest: ${data.database.slowestQuery}</div>` : ''}
+<div style="margin-top:16px;">
+<div class="card-label">Top Tables by Row Count</div>
+<table style="margin-top:8px;">
+<thead><tr><th>Table</th><th>Rows</th></tr></thead>
+<tbody>
+${(data.database.topTables || []).map(t => `<tr><td style="font-family:monospace">${t.table_name}</td><td>${t.row_count}</td></tr>`).join('')}
+</tbody>
+</table>
+</div>
+`;
+} catch (err) {
+document.getElementById('overallStatus').textContent = '⚠️ Monitor Error';
+document.getElementById('overallStatus').className = 'status-badge status-critical';
+console.error('Monitor load error:', err);
+}
+}
+
+function setupAutoRefresh() {
+if (refreshTimer) clearInterval(refreshTimer);
+const cb = document.getElementById('autoRefresh');
+if (cb.checked) refreshTimer = setInterval(loadData, 5000);
+}
+document.getElementById('autoRefresh').addEventListener('change', setupAutoRefresh);
+loadData();
+setupAutoRefresh();
+</script>
+</body>
+</html>

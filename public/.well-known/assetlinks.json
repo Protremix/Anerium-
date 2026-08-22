@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.anerium.onepass",
+    "sha256_cert_fingerprints": ["FF:85:2B:44:96:0B:69:F1:03:15:03:35:79:3E:3D:73:33:08:1C:23:73:94:8A:42:00:CF:7A:9B:3B:57:69:4D"]
+  }
+}]
