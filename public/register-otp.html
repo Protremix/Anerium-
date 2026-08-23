@@ -20,22 +20,16 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; display: fl
 .card h2 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
 .card .subtitle { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
 .form-group { margin-bottom: 18px; }
-.form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+.form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
 .form-group input { width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 15px; transition: all 0.2s; outline: none; }
 .form-group input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
 .form-group .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
-.phone-group { display: flex; gap: 8px; }
-.phone-group input[type="tel"] { flex: 1; }
 .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
 .btn-primary { background: var(--primary); color: white; }
 .btn-primary:hover { background: var(--primary-dark); }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary { background: transparent; border: 1px solid var(--border); color: var(--text); }
 .btn-secondary:hover { background: var(--bg); }
-.btn-row { display: flex; gap: 8px; }
-.btn-row .btn { flex: 1; }
-.otp-section { display: none; }
-.otp-section.active { display: block; }
 .otp-input { letter-spacing: 8px; font-size: 22px; font-weight: 600; text-align: center; }
 .alert { padding: 12px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; display: none; }
 .alert.show { display: block; }
@@ -50,52 +44,43 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; display: fl
 .google-btn svg { width: 20px; height: 20px; }
 .footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted); }
 .footer a { color: var(--primary); text-decoration: none; }
-.footer a:hover { text-decoration: underline; }
-.step-indicator { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 24px; }
-.step { display: flex; align-items: center; gap: 8px; }
+.step-indicator { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; }
 .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; background: var(--border); color: var(--muted); }
 .step-dot.active { background: var(--primary); color: white; }
 .step-dot.done { background: var(--success); color: white; }
-.step-line { width: 40px; height: 2px; background: var(--border); }
-.step-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.step-line { width: 32px; height: 2px; background: var(--border); }
+.step-section { display: none; }
+.step-section.active { display: block; }
 .timer { text-align: center; font-size: 13px; color: var(--muted); margin-top: 12px; }
-.timer a { color: var(--primary); cursor: pointer; text-decoration: none; }
-.timer a:hover { text-decoration: underline; }
 .resend-btn { background: none; border: none; color: var(--primary); cursor: pointer; font-size: 13px; }
 .resend-btn:disabled { color: var(--muted); cursor: not-allowed; }
+.check-icon { width: 64px; height: 64px; background: #ecfdf5; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; }
 </style>
 </head>
 <body>
 <div class="container">
   <div class="logo">
-    <a href="/">
-      <h1>Anerium <span>— One Pass —</span></h1>
-    </a>
+    <a href="/"><h1>Anerium <span>— One Pass —</span></h1></a>
     <p>Join the global loyalty platform</p>
   </div>
 
   <div class="card">
     <div class="step-indicator">
-      <div class="step">
-        <div class="step-dot active" id="dot1">1</div>
-      </div>
+      <div class="step-dot active" id="dot1">1</div>
       <div class="step-line"></div>
-      <div class="step">
-        <div class="step-dot" id="dot2">2</div>
-      </div>
+      <div class="step-dot" id="dot2">2</div>
       <div class="step-line"></div>
-      <div class="step">
-        <div class="step-dot" id="dot3">3</div>
-      </div>
+      <div class="step-dot" id="dot3">3</div>
+      <div class="step-line"></div>
+      <div class="step-dot" id="dot4">4</div>
     </div>
 
     <div id="alert" class="alert"></div>
 
     <!-- Step 1: Registration Form -->
-    <div id="step1">
+    <div id="step1" class="step-section active">
       <h2>Create your account</h2>
       <p class="subtitle">Enter your details to get started</p>
-
       <form id="registerForm">
         <div class="form-group">
           <label>Full Name</label>
@@ -107,10 +92,8 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; display: fl
         </div>
         <div class="form-group">
           <label>Phone Number</label>
-          <div class="phone-group">
-            <input type="tel" id="phone_number" placeholder="+34 612 345 678" required>
-          </div>
-          <div class="hint">Include country code (e.g. +34 for Spain)</div>
+          <input type="tel" id="phone_number" placeholder="+44 7309 122167" required>
+          <div class="hint">Include country code (e.g. +44 for UK)</div>
         </div>
         <div class="form-group">
           <label>Password</label>
@@ -118,43 +101,50 @@ body { background: var(--bg); color: var(--text); min-height: 100vh; display: fl
         </div>
         <button type="submit" class="btn btn-primary" id="registerBtn">Continue</button>
       </form>
-
       <div class="divider"><span>or</span></div>
-
       <a href="/api/apps/6a7d630d865dd7ed11a16a3c/auth/google" class="google-btn">
         <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Sign up with Google
       </a>
     </div>
 
-    <!-- Step 2: OTP Verification -->
-    <div id="step2" class="otp-section">
-      <h2>Verify your phone</h2>
-      <p class="subtitle">We sent a 6-digit code to <strong id="phoneDisplay"></strong></p>
-
-      <form id="otpForm">
+    <!-- Step 2: Email OTP -->
+    <div id="step2" class="step-section">
+      <h2>Verify your email</h2>
+      <p class="subtitle">We sent a 6-digit code to <strong id="emailDisplay"></strong></p>
+      <form id="emailOtpForm">
         <div class="form-group">
           <label>Verification Code</label>
-          <input type="text" id="otp_code" class="otp-input" maxlength="6" placeholder="000000" required>
+          <input type="text" id="email_otp" class="otp-input" maxlength="6" placeholder="000000" required>
         </div>
-        <button type="submit" class="btn btn-primary" id="verifyBtn">Verify & Create Account</button>
+        <button type="submit" class="btn btn-primary" id="emailVerifyBtn">Verify Email</button>
       </form>
-
-      <div class="timer">
-        Didn't receive a code? <button class="resend-btn" id="resendBtn">Resend in 30s</button>
-      </div>
-
-      <button class="btn btn-secondary" id="backBtn" style="margin-top: 12px;">← Back</button>
+      <div class="timer">Didn't receive a code? <button class="resend-btn" id="emailResendBtn">Resend in 30s</button></div>
+      <button class="btn btn-secondary" id="emailBackBtn" style="margin-top: 12px;">← Back</button>
     </div>
 
-    <!-- Step 3: Success -->
-    <div id="step3" class="otp-section">
+    <!-- Step 3: Phone SMS OTP -->
+    <div id="step3" class="step-section">
+      <h2>Verify your phone</h2>
+      <p class="subtitle">We sent a 6-digit code via SMS to <strong id="phoneDisplay"></strong></p>
+      <form id="phoneOtpForm">
+        <div class="form-group">
+          <label>Verification Code</label>
+          <input type="text" id="phone_otp" class="otp-input" maxlength="6" placeholder="000000" required>
+        </div>
+        <button type="submit" class="btn btn-primary" id="phoneVerifyBtn">Verify & Create Account</button>
+      </form>
+      <div class="timer">Didn't receive a code? <button class="resend-btn" id="phoneResendBtn">Resend in 30s</button></div>
+    </div>
+
+    <!-- Step 4: Success -->
+    <div id="step4" class="step-section">
       <div style="text-align: center; padding: 20px 0;">
-        <div style="width: 64px; height: 64px; background: #ecfdf5; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <div class="check-icon">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <h2>Account created!</h2>
-        <p class="subtitle">Your phone number has been verified. Welcome to ANERIUM One Pass.</p>
+        <p class="subtitle">Email and phone verified. Welcome to ANERIUM One Pass.</p>
         <button class="btn btn-primary" onclick="window.location.href='/dashboard'" style="margin-top: 16px;">Go to Dashboard →</button>
       </div>
     </div>
@@ -179,81 +169,93 @@ function showAlert(type, msg) {
 }
 
 function setStep(step) {
-  document.getElementById('step1').style.display = step === 1 ? 'block' : 'none';
-  document.getElementById('step2').classList.toggle('active', step === 2);
-  document.getElementById('step3').classList.toggle('active', step === 3);
-
-  const dots = ['dot1', 'dot2', 'dot3'];
-  dots.forEach((id, i) => {
-    const dot = document.getElementById(id);
-    dot.className = 'step-dot' + (i + 1 < step ? ' done' : i + 1 === step ? ' active' : '');
-  });
+  for (let i = 1; i <= 4; i++) {
+    document.getElementById('step' + i).classList.toggle('active', i === step);
+  }
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById('dot' + i);
+    dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' active' : '');
+  }
 }
 
-// Step 1: Register + Send OTP
+function startCountdown(btnId) {
+  let s = 30;
+  const btn = document.getElementById(btnId);
+  btn.disabled = true;
+  btn.textContent = `Resend in ${s}s`;
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(() => {
+    if (--s <= 0) { clearInterval(countdownInterval); btn.disabled = false; btn.textContent = 'Resend code'; }
+    else btn.textContent = `Resend in ${s}s`;
+  }, 1000);
+}
+
+// Step 1: Submit form → send email OTP
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('registerBtn');
-  btn.disabled = true;
-  btn.textContent = 'Sending code...';
-
-  const fullName = document.getElementById('full_name').value;
-  const email = document.getElementById('email').value;
-  const phone = document.getElementById('phone_number').value;
-  const password = document.getElementById('password').value;
-
-  pendingData = { full_name: fullName, email, phone_number: phone, password };
-
+  btn.disabled = true; btn.textContent = 'Sending email code...';
+  pendingData = {
+    full_name: document.getElementById('full_name').value,
+    email: document.getElementById('email').value,
+    phone_number: document.getElementById('phone_number').value,
+    password: document.getElementById('password').value
+  };
   try {
-    // First send OTP
     const resp = await fetch(API_BASE + '/auth/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone_number: phone, delivery_method: 'sms' })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingData.email, delivery_method: 'email' })
     });
     const data = await resp.json();
-
-    if (!resp.ok) {
-      showAlert('error', data.error || 'Failed to send OTP');
-      btn.disabled = false;
-      btn.textContent = 'Continue';
-      return;
-    }
-
-    // Show OTP step
-    document.getElementById('phoneDisplay').textContent = phone;
+    if (!resp.ok) { showAlert('error', data.error || 'Failed to send code'); btn.disabled = false; btn.textContent = 'Continue'; return; }
+    document.getElementById('emailDisplay').textContent = pendingData.email;
     setStep(2);
-    startResendCountdown();
-
-    // Auto-focus OTP input
-    document.getElementById('otp_code').focus();
-
-    // Dev mode: pre-fill code
-    if (data.dev_code) {
-      document.getElementById('otp_code').value = data.dev_code;
-      showAlert('info', 'Dev mode: code pre-filled. Configure Twilio for real SMS.');
-    }
-  } catch (err) {
-    showAlert('error', 'Network error. Please try again.');
-    btn.disabled = false;
-    btn.textContent = 'Continue';
-  }
+    startCountdown('emailResendBtn');
+    document.getElementById('email_otp').focus();
+    if (data.dev_code) { document.getElementById('email_otp').value = data.dev_code; showAlert('info', 'Dev mode: code pre-filled'); }
+  } catch (err) { showAlert('error', 'Network error'); btn.disabled = false; btn.textContent = 'Continue'; }
 });
 
-// Step 2: Verify OTP + Register
-document.getElementById('otpForm').addEventListener('submit', async (e) => {
+// Step 2: Verify email OTP → send phone OTP
+document.getElementById('emailOtpForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = document.getElementById('verifyBtn');
-  btn.disabled = true;
-  btn.textContent = 'Verifying...';
-
-  const code = document.getElementById('otp_code').value;
-
+  const btn = document.getElementById('emailVerifyBtn');
+  btn.disabled = true; btn.textContent = 'Verifying...';
+  const code = document.getElementById('email_otp').value;
   try {
-    // Register with phone + OTP
+    // Verify email OTP
+    const resp = await fetch(API_BASE + '/auth/verify-phone', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone_number: pendingData.email, code: code })
+    });
+    const data = await resp.json();
+    if (!resp.ok) { showAlert('error', data.error || 'Invalid code'); btn.disabled = false; btn.textContent = 'Verify Email'; return; }
+    
+    // Email verified! Now send phone OTP
+    const smsResp = await fetch(API_BASE + '/auth/send-otp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone_number: pendingData.phone_number, delivery_method: 'sms' })
+    });
+    const smsData = await smsResp.json();
+    if (!smsResp.ok) { showAlert('error', smsData.error || 'Failed to send SMS'); btn.disabled = false; btn.textContent = 'Verify Email'; return; }
+    
+    document.getElementById('phoneDisplay').textContent = pendingData.phone_number;
+    setStep(3);
+    startCountdown('phoneResendBtn');
+    document.getElementById('phone_otp').focus();
+    if (smsData.dev_code) { document.getElementById('phone_otp').value = smsData.dev_code; }
+  } catch (err) { showAlert('error', 'Network error'); btn.disabled = false; btn.textContent = 'Verify Email'; }
+});
+
+// Step 3: Verify phone OTP → create account
+document.getElementById('phoneOtpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('phoneVerifyBtn');
+  btn.disabled = true; btn.textContent = 'Creating account...';
+  const code = document.getElementById('phone_otp').value;
+  try {
     const resp = await fetch(API_BASE + '/auth/register-with-phone', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: pendingData.email,
         password: pendingData.password,
@@ -263,91 +265,55 @@ document.getElementById('otpForm').addEventListener('submit', async (e) => {
       })
     });
     const data = await resp.json();
-
-    if (!resp.ok) {
-      showAlert('error', data.error || 'Verification failed');
-      btn.disabled = false;
-      btn.textContent = 'Verify & Create Account';
-      return;
-    }
-
-    // Store token
-    if (data.access_token) {
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('token', data.access_token);
-    }
-
-    // Show success
+    if (!resp.ok) { showAlert('error', data.error || 'Verification failed'); btn.disabled = false; btn.textContent = 'Verify & Create Account'; return; }
+    if (data.access_token) { localStorage.setItem('access_token', data.access_token); localStorage.setItem('token', data.access_token); }
     clearInterval(countdownInterval);
-    setStep(3);
-
-    // Auto-redirect after 3 seconds
+    setStep(4);
     setTimeout(() => { window.location.href = '/dashboard'; }, 3000);
-  } catch (err) {
-    showAlert('error', 'Network error. Please try again.');
-    btn.disabled = false;
-    btn.textContent = 'Verify & Create Account';
-  }
+  } catch (err) { showAlert('error', 'Network error'); btn.disabled = false; btn.textContent = 'Verify & Create Account'; }
 });
 
-// Resend OTP
-function startResendCountdown() {
-  let seconds = 30;
-  const btn = document.getElementById('resendBtn');
-  btn.disabled = true;
-  btn.textContent = `Resend in ${seconds}s`;
-
-  countdownInterval = setInterval(() => {
-    seconds--;
-    if (seconds <= 0) {
-      clearInterval(countdownInterval);
-      btn.disabled = false;
-      btn.textContent = 'Resend code';
-    } else {
-      btn.textContent = `Resend in ${seconds}s`;
-    }
-  }, 1000);
-}
-
-document.getElementById('resendBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('resendBtn');
-  btn.disabled = true;
-  btn.textContent = 'Sending...';
-
+// Resend buttons
+document.getElementById('emailResendBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('emailResendBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
   try {
     const resp = await fetch(API_BASE + '/auth/resend-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone_number: pendingData.phone_number })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingData.email, delivery_method: 'email' })
     });
     const data = await resp.json();
-
-    if (data.dev_code) {
-      document.getElementById('otp_code').value = data.dev_code;
-    }
+    if (data.dev_code) document.getElementById('email_otp').value = data.dev_code;
     showAlert('success', 'New code sent!');
-    startResendCountdown();
-  } catch (err) {
-    showAlert('error', 'Failed to resend. Try again.');
-    btn.disabled = false;
-    btn.textContent = 'Resend code';
-  }
+    startCountdown('emailResendBtn');
+  } catch (err) { showAlert('error', 'Failed to resend'); btn.disabled = false; btn.textContent = 'Resend code'; }
 });
 
-// Back button
-document.getElementById('backBtn').addEventListener('click', () => {
+document.getElementById('phoneResendBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('phoneResendBtn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const resp = await fetch(API_BASE + '/auth/resend-otp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone_number: pendingData.phone_number, delivery_method: 'sms' })
+    });
+    const data = await resp.json();
+    if (data.dev_code) document.getElementById('phone_otp').value = data.dev_code;
+    showAlert('success', 'New code sent!');
+    startCountdown('phoneResendBtn');
+  } catch (err) { showAlert('error', 'Failed to resend'); btn.disabled = false; btn.textContent = 'Resend code'; }
+});
+
+document.getElementById('emailBackBtn').addEventListener('click', () => {
   clearInterval(countdownInterval);
   setStep(1);
   document.getElementById('registerBtn').disabled = false;
   document.getElementById('registerBtn').textContent = 'Continue';
 });
 
-// Enter key on OTP input auto-submits
-document.getElementById('otp_code').addEventListener('input', (e) => {
-  if (e.target.value.length === 6) {
-    document.getElementById('verifyBtn').click();
-  }
-});
+// Auto-submit on 6 digits
+document.getElementById('email_otp').addEventListener('input', (e) => { if (e.target.value.length === 6) document.getElementById('emailVerifyBtn').click(); });
+document.getElementById('phone_otp').addEventListener('input', (e) => { if (e.target.value.length === 6) document.getElementById('phoneVerifyBtn').click(); });
 </script>
 </body>
 </html>

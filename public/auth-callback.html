@@ -6,25 +6,28 @@
 const params = new URLSearchParams(window.location.search);
 const token = params.get('token');
 const error = params.get('error');
-const isNewUser = params.get('is_new_user');
+const isNewUser = params.get('is_new_user') === 'true';
 
 if (window.opener) {
   // Popup flow: postMessage to parent window
   if (token) {
     window.opener.postMessage({
       access_token: token,
-      is_new_user: isNewUser === 'true'
+      is_new_user: isNewUser
     }, '*');
   } else if (error) {
     window.opener.postMessage({ error: error }, '*');
   }
   setTimeout(() => window.close(), 100);
 } else if (token) {
-  // Full-page redirect flow: redirect with access_token in URL
-  // SDK reads access_token param, stores in localStorage, then SPA redirects via from_url
-  let url = '/login?access_token=' + encodeURIComponent(token) + '&from_url=' + encodeURIComponent('/dashboard');
-  if (isNewUser === 'true') url += '&is_new_user=true';
-  window.location.href = url;
+  if (isNewUser) {
+    // New Google user → redirect to phone verification
+    window.location.href = '/verify-phone.html?token=' + encodeURIComponent(token);
+  } else {
+    // Returning user → straight to dashboard
+    let url = '/login?access_token=' + encodeURIComponent(token) + '&from_url=' + encodeURIComponent('/dashboard');
+    window.location.href = url;
+  }
 } else if (error) {
   window.location.href = '/login?google_error=' + encodeURIComponent(error);
 } else {

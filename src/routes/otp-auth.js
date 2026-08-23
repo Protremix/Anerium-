@@ -27,6 +27,58 @@ function otpLimiter(req, res, next) {
   next();
 }
 
+// Send OTP via Brevo transactional email
+async function sendOtpEmail(emailAddress, code) {
+  const brevoKey = process.env.BREVO_API_KEY;
+  const brevoSender = process.env.BREVO_SENDER_EMAIL || 'noreply@anerium.com';
+  const brevoSenderName = process.env.BREVO_SENDER_NAME || 'ANERIUM';
+  
+  if (brevoKey) {
+    try {
+      const response = await fetch(
+        'https://api.brevo.com/v3/smtp/email',
+        {
+          method: 'POST',
+          headers: {
+            'accept': 'application/json',
+            'content-type': 'application/json',
+            'api-key': brevoKey,
+          },
+          body: JSON.stringify({
+            sender: { name: brevoSenderName, email: brevoSender },
+            to: [{ email: emailAddress }],
+            subject: 'Your ANERIUM OnePass Verification Code',
+            htmlContent: `
+              <div style="font-family:Inter,-apple-system,sans-serif;max-width:480px;margin:0 auto;padding:32px;">
+                <div style="text-align:center;margin-bottom:24px;">
+                  <h1 style="color:#4f46e5;font-size:24px;margin:0;">Anerium — One Pass</h1>
+                </div>
+                <div style="background:#f9fafb;border-radius:16px;padding:32px;text-align:center;">
+                  <p style="color:#6b7280;font-size:14px;margin:0 0 20px;">Your verification code is:</p>
+                  <div style="font-size:36px;font-weight:700;letter-spacing:8px;color:#4f46e5;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 24px;display:inline-block;margin:0 0 20px;">${code}</div>
+                  <p style="color:#6b7280;font-size:13px;margin:0;">This code expires in 5 minutes.<br>Do not share this code with anyone.</p>
+                </div>
+                <p style="color:#9ca3af;font-size:12px;text-align:center;margin-top:24px;">If you didn't request this code, you can safely ignore this email.</p>
+              </div>
+            `,
+            contentType: 'text/html',
+          }),
+        }
+      );
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || data.code || 'Brevo email error');
+      console.log(`[Brevo Email] Sent to ${emailAddress}, messageId: ${data.messageId || 'unknown'}`);
+      return { sent: true, method: 'email', dev: false };
+    } catch (err) {
+      console.error('Brevo email error:', err.message);
+      return { sent: false, method: 'email', dev: false, error: err.message };
+    }
+  }
+  
+  console.log(`[DEV OTP EMAIL] Code ${code} for ${emailAddress}`);
+  return { sent: false, method: 'dev', dev: true, code };
+}
+
 // Generate 6-digit OTP code
 function generateOtpCode() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -94,14 +146,14 @@ async function sendOtpSms(phoneNumber, code) {
  */
 router.post('/apps/:appId/auth/send-otp', otpLimiter, async (req, res) => {
   try {
-    const { phone_number, delivery_method } = req.body;
+    const { phone_number, email, delivery_method } = req.body;
     
-    if (!phone_number) {
-      return res.status(400).json({ error: 'Phone number is required' });
+    if (!phone_number && !email) {
+      return res.status(400).json({ error: 'Phone number or email is required' });
     }
     
-    const normalizedPhone = normalizePhone(phone_number);
-    if (normalizedPhone.length < 11) {
+    let normalizedPhone = phone_number ? normalizePhone(phone_number) : null;
+    if (phone_number && normalizedPhone.length < 11) {
       return res.status(400).json({ error: 'Invalid phone number format. Include country code, e.g. +34612345678' });
     }
     
@@ -119,28 +171,47 @@ router.post('/apps/:appId/auth/send-otp', otpLimiter, async (req, res) => {
     const codeHash = hashCode(code);
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
     
-    // Store in otp_codes table (invalidate previous codes for this phone)
+    const target = normalizedPhone || email;
+    const method = delivery_method || (email ? 'email' : 'sms');
+    
+    // Store in otp_codes table (invalidate previous codes)
     await pool.query(
       'UPDATE otp_codes SET verified = true WHERE phone_number = $1 AND verified = false',
-      [normalizedPhone]
+      [target]
     );
     
     await pool.query(
       `INSERT INTO otp_codes (id, phone_number, code_hash, delivery_method, expires_at, attempts, verified, created_date, updated_date)
        VALUES (gen_random_uuid()::text, $1, $2, $3, $4, 0, false, NOW(), NOW())`,
-      [normalizedPhone, codeHash, delivery_method || 'sms', expiresAt]
+      [target, codeHash, method, expiresAt]
     );
     
-    // Send OTP
-    const result = await sendOtpSms(normalizedPhone, code);
+    // Send OTP via SMS or email
+    let result;
+    if (method === 'email' && email) {
+      result = await sendOtpEmail(email, code);
+    } else {
+      result = await sendOtpSms(normalizedPhone, code);
+    }
+    
+    if (!result.sent && !result.dev) {
+      return res.status(502).json({ 
+        error: 'Failed to send OTP: ' + (result.error || 'Unknown error'),
+        ...(normalizedPhone ? { phone_number: normalizedPhone } : {}),
+        ...(email ? { email } : {}),
+      });
+    }
     
     res.json({
       success: true,
       message: result.dev 
-        ? 'OTP code generated (dev mode — configure Brevo for SMS)'
-        : 'OTP sent to your phone number',
-      phone_number: normalizedPhone,
-      expires_in: 300, // 5 minutes in seconds
+        ? 'OTP code generated (dev mode — configure Brevo)'
+        : method === 'email' 
+          ? 'OTP sent to your email'
+          : 'OTP sent to your phone number',
+      ...(normalizedPhone ? { phone_number: normalizedPhone } : {}),
+      ...(email ? { email } : {}),
+      expires_in: 300,
       ...(result.dev ? { dev_code: code } : {}),
     });
   } catch (err) {
@@ -322,16 +393,16 @@ router.post('/apps/:appId/auth/register-with-phone', async (req, res) => {
  * Resends OTP (same rate limiting)
  */
 router.post('/apps/:appId/auth/resend-otp', otpLimiter, async (req, res) => {
-  // Same as send-otp but explicitly for resending
   try {
-    const { phone_number } = req.body;
-    if (!phone_number) {
-      return res.status(400).json({ error: 'Phone number is required' });
+    const { phone_number, email, delivery_method } = req.body;
+    if (!phone_number && !email) {
+      return res.status(400).json({ error: 'Phone number or email is required' });
     }
-    const normalizedPhone = normalizePhone(phone_number);
+    const target = phone_number ? normalizePhone(phone_number) : email;
+    const method = delivery_method || (email ? 'email' : 'sms');
     
     // Invalidate previous codes
-    await pool.query('UPDATE otp_codes SET verified = true WHERE phone_number = $1 AND verified = false', [normalizedPhone]);
+    await pool.query('UPDATE otp_codes SET verified = true WHERE phone_number = $1 AND verified = false', [target]);
     
     // Generate new code
     const code = generateOtpCode();
@@ -340,15 +411,26 @@ router.post('/apps/:appId/auth/resend-otp', otpLimiter, async (req, res) => {
     
     await pool.query(
       `INSERT INTO otp_codes (id, phone_number, code_hash, delivery_method, expires_at, attempts, verified, created_date, updated_date)
-       VALUES (gen_random_uuid()::text, $1, $2, 'sms', $3, 0, false, NOW(), NOW())`,
-      [normalizedPhone, codeHash, expiresAt]
+       VALUES (gen_random_uuid()::text, $1, $2, $3, $4, 0, false, NOW(), NOW())`,
+      [target, codeHash, method, expiresAt]
     );
     
-    const result = await sendOtpSms(normalizedPhone, code);
+    let result;
+    if (method === 'email' && email) {
+      result = await sendOtpEmail(email, code);
+    } else {
+      result = await sendOtpSms(target, code);
+    }
+    
+    if (!result.sent && !result.dev) {
+      return res.status(502).json({ 
+        error: 'Failed to send OTP: ' + (result.error || 'Unknown error'),
+      });
+    }
     
     res.json({
       success: true,
-      message: result.dev ? 'New OTP code generated (dev mode)' : 'New OTP sent to your phone number',
+      message: result.dev ? 'New OTP code generated (dev mode)' : 'New OTP sent',
       expires_in: 300,
       ...(result.dev ? { dev_code: code } : {}),
     });
