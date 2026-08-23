@@ -15,6 +15,7 @@ import authRoutes from './routes/auth.js';
 import functionRoutes from './routes/functions.js';
 import monitoringRoutes, { metricsMiddleware } from './routes/monitoring.js';
 import gdprRoutes from './routes/gdpr.js';
+import otpAuthRoutes from './routes/otp-auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -217,6 +218,7 @@ app.use('/api', functionRoutes);
 app.use('/api', entityRoutes);
 app.use('/api', monitoringRoutes);
 app.use('/api', gdprRoutes);
+app.use('/api', otpAuthRoutes);
 
 // Stub endpoints for analytics/logging that SPA calls but aren't needed self-hosted
 app.post('/app-logs/:appId/log-user-in-app/:page', (req, res) => res.json({ ok: true }));
