@@ -20,11 +20,11 @@ if (window.opener) {
   }
   setTimeout(() => window.close(), 100);
 } else if (token) {
-  // Full-page redirect flow: store token and redirect to login page
-  // The login page will detect the token and log in
-  sessionStorage.setItem('google_access_token', token);
-  if (isNewUser === 'true') sessionStorage.setItem('is_new_user', 'true');
-  window.location.href = '/login?google_auth=success';
+  // Full-page redirect flow: redirect with access_token in URL
+  // SDK reads access_token param, stores in localStorage, then SPA redirects via from_url
+  let url = '/login?access_token=' + encodeURIComponent(token) + '&from_url=' + encodeURIComponent('/dashboard');
+  if (isNewUser === 'true') url += '&is_new_user=true';
+  window.location.href = url;
 } else if (error) {
   window.location.href = '/login?google_error=' + encodeURIComponent(error);
 } else {
