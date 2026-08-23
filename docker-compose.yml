@@ -68,8 +68,6 @@ services:
       OPENAI_PROJECT_KEY: ${OPENAI_PROJECT_KEY}
     ports:
       - "127.0.0.1:3001:3001"
-    volumes:
-      - ./public:/app/public
 
 volumes:
   postgres_data:
