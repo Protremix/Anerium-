@@ -1096,6 +1096,16 @@ router.post('/apps/:appId/functions/:functionName', async (req, res) => {
       case 'walletPassApi':
         return res.json({ success: true, message: `${functionName} not fully implemented in self-hosted mode` });
       
+      case 'sendToMike': {
+        const { message, projectId, messageType } = req.body;
+        if (!message) return res.status(400).json({ error: 'Message is required' });
+        const id = uuidv4();
+        await pool.query(
+          'INSERT INTO agent_messages (id, content, from_agent, to_agent, message_type, project_id, status, created_by) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+          [id, message, 'brio', 'mike', messageType || 'status', projectId || 'anerium-onepass', 'sent', req.user?.userId || null]
+        );
+        return res.json({ success: true, id, message: 'Message sent to Mike' });
+      }
       default:
         return res.status(404).json({ error: `Function not found: ${functionName}` });
     }

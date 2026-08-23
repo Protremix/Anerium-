@@ -14,6 +14,7 @@ import entityRoutes from './routes/entities.js';
 import authRoutes from './routes/auth.js';
 import functionRoutes from './routes/functions.js';
 import monitoringRoutes, { metricsMiddleware } from './routes/monitoring.js';
+import gdprRoutes from './routes/gdpr.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -215,6 +216,13 @@ app.use('/api', authRoutes);
 app.use('/api', functionRoutes);
 app.use('/api', entityRoutes);
 app.use('/api', monitoringRoutes);
+app.use('/api', gdprRoutes);
+
+// Stub endpoints for analytics/logging that SPA calls but aren't needed self-hosted
+app.post('/app-logs/:appId/log-user-in-app/:page', (req, res) => res.json({ ok: true }));
+app.post('/apps/test/analytics/track/batch', (req, res) => res.json({ ok: true }));
+app.post('/apps/:appId/analytics/track', (req, res) => res.json({ ok: true }));
+app.post('/apps/:appId/analytics/track/batch', (req, res) => res.json({ ok: true }));
 
 // Serve static frontend (Vite build)
 const distPath = path.join(__dirname, '..', 'public');
