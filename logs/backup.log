@@ -7,3 +7,14 @@
 [2026-08-22 06:47:07] Pruning backups older than 30 days (before 20260723)
 [2026-08-22 06:47:07] Backup complete. Total backups: 1, Total size: 76K
 [2026-08-22 06:47:07] === Backup finished ===
+[2026-08-23 03:00:01] === Backup started: 20260823_030001 ===
+[2026-08-23 03:00:01] Creating DB backup: /opt/anerium/backups/db_20260823_030001.sql.gz
+[2026-08-23 03:00:02] DB backup complete: 36K
+[2026-08-23 03:00:02] DB backup integrity verified
+[2026-08-23 03:00:02] Creating code backup: /opt/anerium/backups/code_20260823_030001.tar.gz
+[2026-08-23 03:00:02] Code backup complete: 36K
+[2026-08-23 03:00:02] Offsite push: SKIPPED (no S3 config)
+[2026-08-23 03:00:02] Offsite push: SKIPPED (no S3 config)
+[2026-08-23 03:00:02] Pruning backups older than 30 days
+[2026-08-23 03:00:02] Backup complete. Total: 2 backups, 588K
+[2026-08-23 03:00:02] === Backup finished ===

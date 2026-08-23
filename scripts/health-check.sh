@@ -1,87 +1,79 @@
 #!/bin/bash
-# ANERIUM automated health check — runs every minute via cron
-# Checks: server health, DB connectivity, endpoint response times, alerts, docker, disk, memory
+# ANERIUM OnePass — Comprehensive Health Check
+# Runs every minute via cron
 
-LOG_FILE="/var/log/anerium-health.log"
-TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+set -euo pipefail
+
 HEALTH_URL="https://anerium.com/health"
-MONITOR_URL="https://anerium.com/api/monitoring/health"
-ALERT_URL="https://anerium.com/api/monitoring/alerts"
+LOG_FILE="/opt/anerium/logs/health-check.log"
+ALERT_LOG="/opt/anerium/logs/alerts.log"
+DISK_THRESHOLD=80
+CERT_DAYS_THRESHOLD=30
 
-echo "[${TIMESTAMP}] Starting health check..." >> $LOG_FILE
+log() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+}
 
-# 1. Server health check
-HEALTH_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}|%{time_total}" $HEALTH_URL 2>/dev/null)
-HEALTH_CODE=$(echo $HEALTH_RESPONSE | cut -d'|' -f1)
-HEALTH_TIME=$(echo $HEALTH_RESPONSE | cut -d'|' -f2)
+alert() {
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] ALERT: $1" >> "$ALERT_LOG"
+  log "ALERT: $1"
+  # Send alert via webhook if configured
+  if [ -n "${DISCORD_WEBHOOK:-}" ]; then
+    curl -s -X POST "$DISCORD_WEBHOOK" -H "Content-Type: application/json" -d "{\"content\":\"🚨 ANERIUM ALERT: $1\"}" 2>/dev/null
+  fi
+  if [ -n "${SLACK_WEBHOOK:-}" ]; then
+    curl -s -X POST "$SLACK_WEBHOOK" -H "Content-Type: application/json" -d "{\"text\":\"🚨 ANERIUM ALERT: $1\"}" 2>/dev/null
+  fi
+}
 
-if [ "$HEALTH_CODE" != "200" ]; then
-    echo "[${TIMESTAMP}] CRITICAL: Health endpoint returned HTTP $HEALTH_CODE" >> $LOG_FILE
+# 1. HTTP Health Check
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL" 2>/dev/null || echo "000")
+if [ "$HTTP_CODE" != "200" ]; then
+  alert "Health check failed: HTTP $HTTP_CODE"
 else
-    echo "[${TIMESTAMP}] Server health: OK (HTTP $HEALTH_CODE, ${HEALTH_TIME}s)" >> $LOG_FILE
+  log "Health: OK (200)"
 fi
 
-# 2. Monitoring data check
-MONITOR_DATA=$(curl -s $MONITOR_URL 2>/dev/null)
-OVERALL_STATUS=$(echo $MONITOR_DATA | python3 -c "import sys,json; print(json.load(sys.stdin).get('overallStatus','unknown'))" 2>/dev/null)
-UPTIME=$(echo $MONITOR_DATA | python3 -c "import sys,json; print(json.load(sys.stdin).get('uptime','unknown'))" 2>/dev/null)
-TOTAL_REQUESTS=$(echo $MONITOR_DATA | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(e['requests'] for e in d.get('endpoints',[])))" 2>/dev/null)
-TOTAL_ERRORS=$(echo $MONITOR_DATA | python3 -c "import sys,json; d=json.load(sys.stdin); print(sum(e['errors'] for e in d.get('endpoints',[])))" 2>/dev/null)
-SLOW_ENDPOINTS=$(echo $MONITOR_DATA | python3 -c "import sys,json; d=json.load(sys.stdin); print(len([e for e in d.get('endpoints',[]) if e['avgMs'] > 500]))" 2>/dev/null)
-SLOW_QUERIES=$(echo $MONITOR_DATA | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('database',{}).get('slowQueries',0))" 2>/dev/null)
-DB_CONNECTIONS=$(echo $MONITOR_DATA | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('database',{}).get('activeConnections',0))" 2>/dev/null)
-
-echo "[${TIMESTAMP}] Overall: $OVERALL_STATUS | Uptime: $UPTIME" >> $LOG_FILE
-echo "[${TIMESTAMP}] Requests: $TOTAL_REQUESTS | Errors: $TOTAL_ERRORS | Slow endpoints: $SLOW_ENDPOINTS" >> $LOG_FILE
-echo "[${TIMESTAMP}] DB: $SLOW_QUERIES slow queries | $DB_CONNECTIONS active connections" >> $LOG_FILE
-
-# 3. Alert threshold checks
-ALERTS_DATA=$(curl -s $ALERT_URL 2>/dev/null)
-CRITICAL_COUNT=$(echo $ALERTS_DATA | python3 -c "import sys,json; print(json.load(sys.stdin).get('critical',0))" 2>/dev/null)
-WARNING_COUNT=$(echo $ALERTS_DATA | python3 -c "import sys,json; print(json.load(sys.stdin).get('warnings',0))" 2>/dev/null)
-
-# Default to 0 if empty (prevents "integer expression expected" bash error)
-CRITICAL_COUNT=${CRITICAL_COUNT:-0}
-WARNING_COUNT=${WARNING_COUNT:-0}
-
-if [ "$CRITICAL_COUNT" -gt 0 ]; then
-    echo "[${TIMESTAMP}] CRITICAL: $CRITICAL_COUNT critical alerts active!" >> $LOG_FILE
-    curl -s $ALERT_URL | python3 -c "
-import sys,json
-d=json.load(sys.stdin)
-for a in d.get('alerts',[])[:5]:
-    if a.get('severity')=='critical':
-        print('  CRITICAL: ' + a['type'] + ' - ' + a['message'])
-" >> $LOG_FILE 2>/dev/null
+# 2. Disk Space Check
+DISK_USAGE=$(df / | awk 'NR==2 {gsub(/%/,""); print $5}')
+if [ "$DISK_USAGE" -ge "$DISK_THRESHOLD" ]; then
+  alert "Disk usage at ${DISK_USAGE}% (threshold: ${DISK_THRESHOLD}%)"
+else
+  log "Disk: ${DISK_USAGE}% used (threshold: ${DISK_THRESHOLD}%)"
 fi
 
-if [ "$WARNING_COUNT" -gt 0 ]; then
-    echo "[${TIMESTAMP}] WARNING: $WARNING_COUNT warning alerts active" >> $LOG_FILE
+# 3. Certificate Expiry Check
+CERT_EXPIRY=$(echo | openssl s_client -connect anerium.com:443 -servername anerium.com 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+if [ -n "$CERT_EXPIRY" ]; then
+  CERT_EPOCH=$(date -d "$CERT_EXPIRY" +%s 2>/dev/null)
+  NOW_EPOCH=$(date +%s)
+  DAYS_LEFT=$(( (CERT_EPOCH - NOW_EPOCH) / 86400 ))
+  if [ "$DAYS_LEFT" -le "$CERT_DAYS_THRESHOLD" ]; then
+    alert "SSL certificate expires in ${DAYS_LEFT} days (threshold: ${CERT_DAYS_THRESHOLD} days)"
+  else
+    log "Cert: ${DAYS_LEFT} days remaining"
+  fi
 fi
 
-# 4. Docker containers
-APP_STATUS=$(docker inspect --format='{{.State.Status}}' anerium-app-1 2>/dev/null)
-DB_STATUS=$(docker inspect --format='{{.State.Status}}' anerium-db-1 2>/dev/null)
-echo "[${TIMESTAMP}] Docker: app=$APP_STATUS db=$DB_STATUS" >> $LOG_FILE
-
-if [ "$APP_STATUS" != "running" ]; then
-    echo "[${TIMESTAMP}] CRITICAL: anerium-app-1 not running (status: $APP_STATUS)" >> $LOG_FILE
+# 4. Docker Container Check
+APP_STATUS=$(docker ps --filter name=anerium-app-1 --format "{{.Status}}" 2>/dev/null | head -1)
+DB_STATUS=$(docker ps --filter name=anerium-db-1 --format "{{.Status}}" 2>/dev/null | head -1)
+if [[ ! "$APP_STATUS" =~ "Up" ]]; then
+  alert "App container not running: $APP_STATUS"
 fi
-if [ "$DB_STATUS" != "running" ]; then
-    echo "[${TIMESTAMP}] CRITICAL: anerium-db-1 not running (status: $DB_STATUS)" >> $LOG_FILE
+if [[ ! "$DB_STATUS" =~ "Up" ]]; then
+  alert "DB container not running: $DB_STATUS"
 fi
+log "Docker: app=$APP_STATUS, db=$DB_STATUS"
 
-# 5. Disk space
-DISK_USAGE=$(df / | tail -1 | awk '{print $5}' | tr -d '%')
-if [ "$DISK_USAGE" -gt 80 ]; then
-    echo "[${TIMESTAMP}] WARNING: Disk usage at ${DISK_USAGE}%" >> $LOG_FILE
-fi
-
-# 6. Memory
-MEM_USAGE=$(free | awk '/Mem:/ {printf "%.0f", $3/$2*100}')
-if [ "$MEM_USAGE" -gt 80 ]; then
-    echo "[${TIMESTAMP}] WARNING: Memory usage at ${MEM_USAGE}%" >> $LOG_FILE
+# 5. Database Dead Tuples Check
+DEAD_TUPLES=$(docker exec anerium-db-1 psql -U anerium -d anerium -t -c "SELECT sum(n_dead_tup) FROM pg_stat_user_tables;" 2>/dev/null | tr -d ' ' || echo "0")
+if [ "$DEAD_TUPLES" -gt 1000 ]; then
+  alert "Dead tuples: ${DEAD_TUPLES} (threshold: 1000) — VACUUM recommended"
+else
+  log "DB dead tuples: ${DEAD_TUPLES}"
 fi
 
-echo "[${TIMESTAMP}] Health check complete. Status: $OVERALL_STATUS" >> $LOG_FILE
-echo "---" >> $LOG_FILE
+# 6. WAL Archive Check
+WAL_COUNT=$(ls /opt/anerium/wal_archive/ 2>/dev/null | wc -l)
+log "WAL archives: ${WAL_COUNT} files"

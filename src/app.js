@@ -50,12 +50,12 @@ app.use(cors({
 // ============ Rate Limiting ============
 // Auth endpoints: 100 req/min per IP (stricter for brute-force protection)
 const authLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req) => req.ip,
-  message: { error: 'Too many requests, please try again later.' }
+  message: { error: "Too many login attempts. Please try again in 15 minutes." }
 });
 
 // General API: 1000 req/min per authenticated user, 100/min per IP if no token
