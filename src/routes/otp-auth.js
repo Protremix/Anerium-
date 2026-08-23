@@ -48,36 +48,37 @@ function normalizePhone(phone) {
   return p;
 }
 
-// Send OTP via SMS (Twilio if configured, otherwise dev mode)
+// Send OTP via SMS (Brevo if configured, otherwise dev mode)
 async function sendOtpSms(phoneNumber, code) {
-  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-  const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-  const twilioFrom = process.env.TWILIO_PHONE_NUMBER;
+  const brevoKey = process.env.BREVO_API_KEY;
+  const brevoSender = process.env.BREVO_SENDER_NAME || 'ANERIUM';
   
-  if (twilioSid && twilioToken && twilioFrom) {
-    // Production: send via Twilio
+  if (brevoKey) {
+    // Production: send via Brevo SMS API
     try {
-      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString('base64');
       const response = await fetch(
-        `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+        'https://api.brevo.com/v3/transactionalSMS/sms',
         {
           method: 'POST',
           headers: {
-            'Authorization': `Basic ${auth}`,
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'accept': 'application/json',
+            'content-type': 'application/json',
+            'api-key': brevoKey,
           },
-          body: new URLSearchParams({
-            From: twilioFrom,
-            To: phoneNumber,
-            Body: `Your ANERIUM OnePass verification code is: ${code}. It expires in 5 minutes. Do not share this code with anyone.`,
+          body: JSON.stringify({
+            sender: brevoSender,
+            recipient: phoneNumber,
+            content: `Your ANERIUM OnePass verification code is: ${code}. It expires in 5 minutes. Do not share this code with anyone.`,
+            type: 'transactional',
           }),
         }
       );
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || 'Twilio error');
+      if (!response.ok) throw new Error(data.message || data.code || 'Brevo error');
+      console.log(`[Brevo SMS] Sent to ${phoneNumber}, messageId: ${data.messageId || 'unknown'}`);
       return { sent: true, method: 'sms', dev: false };
     } catch (err) {
-      console.error('Twilio SMS error:', err.message);
+      console.error('Brevo SMS error:', err.message);
       return { sent: false, method: 'sms', dev: false, error: err.message };
     }
   }
@@ -136,7 +137,7 @@ router.post('/apps/:appId/auth/send-otp', otpLimiter, async (req, res) => {
     res.json({
       success: true,
       message: result.dev 
-        ? 'OTP code generated (dev mode — configure Twilio for SMS)'
+        ? 'OTP code generated (dev mode — configure Brevo for SMS)'
         : 'OTP sent to your phone number',
       phone_number: normalizedPhone,
       expires_in: 300, // 5 minutes in seconds
